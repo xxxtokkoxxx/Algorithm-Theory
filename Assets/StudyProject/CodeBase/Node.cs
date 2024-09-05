@@ -1,45 +1,28 @@
-using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(RectTransform))]
-public class Node : MonoBehaviour
+namespace StudyProject.CodeBase
 {
-    public int Index;
-    public string Name;
-    public float Distance;
-    public List<Node> Connections = new List<Node>();
-
-    [SerializeField] public RectTransform RectTransform;
-    private UILineRenderer _lineRenderer;
-
-    private void Start()
+    [RequireComponent(typeof(RectTransform))]
+    public class Node : MonoBehaviour
     {
-        if (RectTransform == null)
-            RectTransform = GetComponent<RectTransform>();
-    }
+        public string Name;
+        public RectTransform RectTransform;
 
-    public void SetIndex(int index)
-    {
-        Index = index;
-    }
+        [SerializeField] private UILineRenderer _lineRenderer;
+        private UILineRenderer LineRenderer => _lineRenderer;
 
-    public void AddConnection(Node node, float distance)
-    {
-        Connections.Add(node);
-        Distance = distance;
-    }
+        private void Start()
+        {
+            if (RectTransform == null)
+                RectTransform = GetComponent<RectTransform>();
+        }
 
-    public void AddLineRenderer(Node endNode)
-    {
-        _lineRenderer = gameObject.AddComponent<UILineRenderer>();
-        _lineRenderer.DrawLineBetweenUIElements(RectTransform, endNode.RectTransform);
-    }
+        public void HighLight(bool isHighlighted)
+        {
+            if (_lineRenderer == null)
+                return;
 
-    public void HighLight(bool isHighlighted)
-    {
-        if (_lineRenderer == null)
-            return;
-
-        _lineRenderer.HighLight(isHighlighted);
+            _lineRenderer.HighLight(isHighlighted);
+        }
     }
 }
