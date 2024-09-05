@@ -18,7 +18,7 @@ namespace StudyProject.CodeBase
         public Node _destination;
 
         [SerializeField] private TreeState _treeState;
-        private Dictionary<Node, List<Edge>> _minimumSpanningTree;
+        private Dictionary<Node, Node> _minimumSpanningTree;
 
         public IEnumerable GetNodes()
         {
@@ -110,8 +110,7 @@ namespace StudyProject.CodeBase
                         style.fontSize = 25;
                         style.alignment = TextAnchor.MiddleCenter;
                         Handles.Label((worldPosA + worldPosB) / 2,
-                            Vector2.Distance(edge.Source.RectTransform.position,
-                                edge.Destination.RectTransform.position).ToString("F1"), style);
+                            Vector2.Distance(edge.Source.RectTransform.position, edge.Destination.RectTransform.position).ToString("F1"), style);
                     }
                 }
             }
@@ -122,52 +121,35 @@ namespace StudyProject.CodeBase
             if (_minimumSpanningTree == null)
                 return;
 
-            foreach (KeyValuePair<Node, List<Edge>> connection in _minimumSpanningTree)
+            foreach (Node node in _graph.Nodes)
             {
-                foreach (Edge edge in connection.Value)
+                if (_minimumSpanningTree[node] != null)
                 {
-                    if (edge != null && edge.Source != null && edge.Destination != null &&
-                        edge.Destination.RectTransform != null)
-                    {
-                        Vector3 worldPosA = RectTransformUtility.PixelAdjustPoint(edge.Source.transform.position,
-                            edge.Source.transform, null);
-                        Vector3 worldPosB = RectTransformUtility.PixelAdjustPoint(edge.Destination.transform.position,
-                            edge.Destination.transform, null);
-                        Handles.color = new Color(0.0f, 0.0f, 1f, 0.5f);
-                        Handles.DrawLine(worldPosA, worldPosB, 5.0f);
+                    Node u = _minimumSpanningTree[node];
 
-                        GUIStyle style = new GUIStyle();
-                        style.normal.textColor = Color.black;
-                        style.fontSize = 25;
-                        style.alignment = TextAnchor.MiddleCenter;
-                        Handles.Label((worldPosA + worldPosB) / 2,
-                            Vector2.Distance(edge.Source.RectTransform.position,
-                                edge.Destination.RectTransform.position).ToString("F1"), style);
-                    }
+                    Vector3 worldPosA = RectTransformUtility.PixelAdjustPoint(u.transform.position, u.transform, null);
+                    Vector3 worldPosB =
+                        RectTransformUtility.PixelAdjustPoint(node.transform.position, node.transform, null);
+                    Handles.color = Color.red;
+                    Handles.DrawLine(worldPosA, worldPosB, 5.0f);
+                    GUIStyle style = new GUIStyle();
+                    style.normal.textColor = Color.black;
+                    style.fontSize = 25;
+                    style.alignment = TextAnchor.MiddleCenter;
+                    Handles.Label((worldPosA + worldPosB) / 2,
+                        Vector2.Distance(u.RectTransform.position, node.RectTransform.position).ToString("F1"), style);
                 }
-
-                // Node u = _minimumSpanningTree[node];
-                //
-                // Vector3 worldPosA = RectTransformUtility.PixelAdjustPoint(u.transform.position, u.transform, null);
-                // Vector3 worldPosB =
-                //     RectTransformUtility.PixelAdjustPoint(node.transform.position, node.transform, null);
-                // Handles.color = Color.red;
-                // Handles.DrawLine(worldPosA, worldPosB, 5.0f);
-                // GUIStyle style = new GUIStyle();
-                // style.normal.textColor = Color.black;
-                // style.fontSize = 25;
-                // style.alignment = TextAnchor.MiddleCenter;
-                // Handles.Label((worldPosA + worldPosB) / 2,
-                //     Vector2.Distance(u.RectTransform.position, node.RectTransform.position).ToString("F1"), style);
             }
+
+
         }
     }
-}
 
-public enum TreeState
-{
-    Default,
-    MST,
-    DFS,
-    BFS
+    public enum TreeState
+    {
+        Default,
+        MST,
+        DFS,
+        BFS
+    }
 }

@@ -31,16 +31,16 @@ namespace StudyProject.CodeBase
             _adjacencyCollection[destination].Add(edge);
         }
 
-        public Dictionary<Node, List<Edge>> BuildMinimumSpanningTree()
+        public Dictionary<Node, Node> BuildMinimumSpanningTree()
         {
             HashSet<Node> inTree = new HashSet<Node>();
             Dictionary<Node, double> key = new Dictionary<Node, double>();
-            Dictionary<Node, List<Edge>> parent = new Dictionary<Node, List<Edge>>();
+            Dictionary<Node, Node> parent = new Dictionary<Node, Node>();
 
             foreach (Node node in _nodes)
             {
                 key[node] = double.MaxValue;
-                parent[node] = new List<Edge>();
+                parent[node] = null;
             }
 
             Node startNode = _nodes[0];
@@ -57,7 +57,7 @@ namespace StudyProject.CodeBase
                     if (!inTree.Contains(v) && edge.Weight < key[v])
                     {
                         key[v] = edge.Weight;
-                        parent[v].Add(new Edge(v,u));;
+                        parent[v] = u;
                     }
                 }
             }
@@ -65,29 +65,26 @@ namespace StudyProject.CodeBase
             return parent;
         }
 
-        public void DFS(Node node)
+        public void DFS(Node no)
         {
-            HashSet<Node> visited = new HashSet<Node>();
-            Stack<Node> nodes = new Stack<Node>();
-
-            nodes.Push(node);
-
-            while (nodes.Any())
-            {
-                Node current = nodes.Pop();
-
-                foreach (Edge connection in _adjacencyCollection[current])
-                {
-                    if (visited.Contains(connection.Destination))
-                    {
-                        continue;
-                    }
-
-                    Debug.Log("connected node " + connection.Destination.name);
-                    nodes.Push(connection.Destination);
-                    visited.Add(connection.Destination);
-                }
-            }
+            // HashSet<Node> visited = new bool[_nodes.Count];
+            // Stack<Node> nodes = new Stack<Node>();
+            //
+            // nodes.Push(node);
+            //
+            // Node current = nodes.LastOrDefault();
+            //
+            // foreach (Edge connection in current.Connections)
+            // {
+            //     if (visited[connection.Destination.Index])
+            //     {
+            //         continue;
+            //     }
+            //
+            //     Debug.Log("connected node " + connection.Destination.name);
+            //     nodes.AddLast(connection.Destination);
+            //     visited[connection.Destination.Index] = true;
+            // }
         }
 
         private Node MinKey(Dictionary<Node, double> key, HashSet<Node> insideTree)
