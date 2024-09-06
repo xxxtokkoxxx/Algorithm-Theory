@@ -536,6 +536,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Graph
       objectReference: {fileID: 0}
+    - target: {fileID: 1433694655404119463, guid: 10b85154cc3379348b211e009f106c53, type: 3}
+      propertyPath: _treeState
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1512829024265654767, guid: 10b85154cc3379348b211e009f106c53, type: 3}
       propertyPath: m_SizeDelta.x
       value: 0

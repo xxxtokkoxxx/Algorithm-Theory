@@ -33,6 +33,7 @@ namespace StudyProject.CodeBase
 
         public Dictionary<Node, Node> BuildMinimumSpanningTree()
         {
+
             HashSet<Node> inTree = new HashSet<Node>();
             Dictionary<Node, double> key = new Dictionary<Node, double>();
             Dictionary<Node, Node> parent = new Dictionary<Node, Node>();
@@ -60,31 +61,96 @@ namespace StudyProject.CodeBase
                         parent[v] = u;
                     }
                 }
-            }
 
+            }
+            PrintMST(parent);
             return parent;
         }
 
-        public void DFS(Node no)
+        private void PrintMST(Dictionary<Node, Node> parent)
         {
-            // HashSet<Node> visited = new bool[_nodes.Count];
-            // Stack<Node> nodes = new Stack<Node>();
-            //
-            // nodes.Push(node);
-            //
-            // Node current = nodes.LastOrDefault();
-            //
-            // foreach (Edge connection in current.Connections)
-            // {
-            //     if (visited[connection.Destination.Index])
-            //     {
-            //         continue;
-            //     }
-            //
-            //     Debug.Log("connected node " + connection.Destination.name);
-            //     nodes.AddLast(connection.Destination);
-            //     visited[connection.Destination.Index] = true;
-            // }
+            foreach (var node in _nodes)
+            {
+                if (parent[node] != null)
+                {
+                    Node u = parent[node];
+                    double weight = _adjacencyCollection[u].Find(e => e.Source == node || e.Destination == node).Weight;
+                    Debug.Log($"{u} - {node} \t{weight}");
+                }
+            }
+        }
+
+        public void BFS(Node node, Dictionary<Node, List<Edge>> adjasentCollection)
+        {
+            HashSet<Node> visited = new HashSet<Node>();
+            Queue<Node> nodes = new Queue<Node>();
+
+            nodes.Enqueue(node);
+            visited.Add(node);
+
+            while (nodes.Any())
+            {
+                Node current = nodes.Dequeue();
+                foreach (Edge connection in adjasentCollection[current])
+                {
+                    if (visited.Contains(connection.Destination))
+                    {
+                        continue;
+                    }
+
+                    Debug.Log("connected node " + connection.Destination.name);
+                    nodes.Enqueue(connection.Destination);
+                    visited.Add(connection.Destination);
+                }
+            }
+        }
+
+        // public void DFS(Node node, Dictionary<Node, List<Edge>> adjasentCollection)
+        // {
+        //     HashSet<Node> visited = new HashSet<Node>();
+        //     Stack<Node> nodes = new Stack<Node>();
+        //
+        //     nodes.Push(node);
+        //
+        //     while (nodes.Any())
+        //     {
+        //         Node current = nodes.Pop();
+        //
+        //         if (!visited.Contains(current))
+        //         {
+        //             visited.Add(current);
+        //
+        //             foreach (Edge connection in adjasentCollection[current])
+        //             {
+        //                 if (!visited.Contains(connection.Destination))
+        //                 {
+        //                     Debug.Log("connected node " + connection.Destination.name);
+        //                     nodes.Push(connection.Destination);
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+
+        private void DFSUtil(Node v, HashSet<Node> visited, Dictionary<Node, List<Edge>> adjasentCollectio)
+        {
+            visited.Add(v);
+            Debug.Log(v + " ");
+
+            foreach (Edge edge in adjasentCollectio[v])
+            {
+                if (!visited.Contains(edge.Destination))
+                {
+                    DFSUtil(edge.Destination, visited,adjasentCollectio);
+                }
+            }
+        }
+
+        public void DFS(Node startNode, Dictionary<Node, List<Edge>> adjasentCollectio)
+        {
+            HashSet<Node> visited = new HashSet<Node>();
+
+            DFSUtil(startNode, visited, adjasentCollectio);
         }
 
         private Node MinKey(Dictionary<Node, double> key, HashSet<Node> insideTree)
