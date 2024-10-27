@@ -8,21 +8,10 @@ namespace StudyProject.CodeBase
         public string Name;
         public RectTransform RectTransform;
 
-        [SerializeField] private UILineRenderer _lineRenderer;
-        private UILineRenderer LineRenderer => _lineRenderer;
-
         private void Start()
         {
             if (RectTransform == null)
                 RectTransform = GetComponent<RectTransform>();
-        }
-
-        public void HighLight(bool isHighlighted)
-        {
-            if (_lineRenderer == null)
-                return;
-
-            _lineRenderer.HighLight(isHighlighted);
         }
     }
 }
