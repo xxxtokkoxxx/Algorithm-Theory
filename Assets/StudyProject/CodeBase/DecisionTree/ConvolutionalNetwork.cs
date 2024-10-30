@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Sirenix.OdinInspector;
@@ -71,63 +72,89 @@ namespace StudyProject.CodeBase.DecisionTree
             {1, 1, 1}
         };
 
-        private List<FilterContainer> Filters = new();
+        private float[,] _redFilter =
+        {
+            { 1, 0, -1 },
+            { 1, 0, -1 },
+            { 1, 0, -1 }
+        };
+
+        float[,] _greenFilter =
+        {
+            { 0, 1, 0 },
+            { 1, -4, 1 },
+            { 0, 1, 0 }
+        };
+
+        float[,] _blueFilter =
+        {
+            { -1, -1, -1 },
+            { 0, 0, 0 },
+            { 1, 1, 1 }
+        };
+
+        private List<FilterContainer> _filters = new();
+        [SerializeField] private Texture2D _coloredTexture;
+        [SerializeField] private RawImage _coloredRawImage;
+        [SerializeField] private RawImage _graduallyFilteredRawImage;
 
         private void Start()
         {
-            Filters = new List<FilterContainer>();
-            Filters.Add(new FilterContainer(_filter1,1, RawImages[0]));
-            Filters.Add(new FilterContainer(_filter1,2,RawImages[1]));
-            Filters.Add(new FilterContainer(_filter1,3,RawImages[2]));
+            _filters = new List<FilterContainer>();
+            _filters.Add(new FilterContainer(_filter1, 1, RawImages[0]));
+            _filters.Add(new FilterContainer(_filter1, 2, RawImages[1]));
+            _filters.Add(new FilterContainer(_filter1, 3, RawImages[2]));
 
-            Filters.Add(new FilterContainer(_filter2,1,RawImages[3]));
-            Filters.Add(new FilterContainer(_filter2,2,RawImages[4]));
-            Filters.Add(new FilterContainer(_filter2,3,RawImages[5]));
+            _filters.Add(new FilterContainer(_filter2, 1, RawImages[3]));
+            _filters.Add(new FilterContainer(_filter2, 2, RawImages[4]));
+            _filters.Add(new FilterContainer(_filter2, 3, RawImages[5]));
 
-            Filters.Add(new FilterContainer(_filter3,1,RawImages[6]));
-            Filters.Add(new FilterContainer(_filter3,2,RawImages[7]));
-            Filters.Add(new FilterContainer(_filter3,3,RawImages[8]));
+            _filters.Add(new FilterContainer(_filter3, 1, RawImages[6]));
+            _filters.Add(new FilterContainer(_filter3, 2, RawImages[7]));
+            _filters.Add(new FilterContainer(_filter3, 3, RawImages[8]));
 
-            Filters.Add(new FilterContainer(_filter4,1,RawImages[9]));
-            Filters.Add(new FilterContainer(_filter4,2,RawImages[10]));
-            Filters.Add(new FilterContainer(_filter4,3,RawImages[11]));
+            _filters.Add(new FilterContainer(_filter4, 1, RawImages[9]));
+            _filters.Add(new FilterContainer(_filter4, 2, RawImages[10]));
+            _filters.Add(new FilterContainer(_filter4, 3, RawImages[11]));
 
-            Filters.Add(new FilterContainer(_filter5,1,RawImages[12]));
+            _filters.Add(new FilterContainer(_filter5, 1, RawImages[12]));
 
-            Filters.Add(new FilterContainer(_filter6,1,RawImages[13]));
+            _filters.Add(new FilterContainer(_filter6, 1, RawImages[13]));
 
-            Filters.Add(new FilterContainer(_filter7,1,RawImages[14]));
-            Filters.Add(new FilterContainer(_customFilter,1,RawImages[15]));
+            _filters.Add(new FilterContainer(_filter7, 1, RawImages[14]));
+            _filters.Add(new FilterContainer(_customFilter, 1, RawImages[15]));
 
-            foreach (FilterContainer filter in Filters)
+            foreach (FilterContainer filter in _filters)
             {
                 CalculateConvolutional(filter);
             }
+
+            CalculateConvolutionalGradually();
+            Color[,] colors = ApplyColorConvolution(GetColorMatrix(_coloredTexture), _redFilter, _blueFilter, _greenFilter, 1);
+            _coloredRawImage.texture = CreateTextureFromColorMatrix(colors);
+            Save();
         }
 
         private void CalculateConvolutional(FilterContainer filter)
         {
-            // Перетворимо зображення в градації сірого і отримаємо матрицю яскравості
             float[,] image = GetImage(InputImage);
-            // Виконаємо перший згортковий шар з фільтром
             float[,] convResult = ApplyConvolution(image, filter.Filter, filter.Stride);
-
-            // Застосовуємо ReLU
-            ApplyReLU(convResult);
-
-            // Виконуємо max pooling
             float[,] pooledResult = ApplyMaxPooling(convResult, PoolingStride);
 
-            // Повторити процес згортки, ReLU, pooling за потреби...
-
-            // Згладити результат і подати на FC шар
-            float[] flattened = Flatten(pooledResult);
             Texture2D texture = ConvertConvolutionResultToTexture(pooledResult);
             filter.RawImage.texture = texture;
-            Save(texture);
+        }
 
-            // Тут можна застосувати класифікацію з повністю пов'язаним шаром (нейромережею)
-            Debug.Log("Готово до класифікації!");
+        private void CalculateConvolutionalGradually()
+        {
+            float[,] image = GetImage(InputImage);
+            float[,] image2 = ApplyConvolution(image, _filter1, 1);
+            float[,] image3 = ApplyConvolution(image2, _filter2, 1);
+            float[,] convResult = ApplyConvolution(image3, _filter3, 1);
+
+            float[,] pooledResult = ApplyMaxPooling(convResult, PoolingStride);
+            Texture2D texture = ConvertConvolutionResultToTexture(pooledResult);
+            _graduallyFilteredRawImage.texture = texture;
         }
 
         private float[,] ApplyConvolution(float[,] matrix, float[,] filter, int stride)
@@ -221,16 +248,13 @@ namespace StudyProject.CodeBase.DecisionTree
             int height = texture.height;
             float[,] matrix = new float[height, width];
 
-            // Отримуємо всі пікселі з текстури
             Color[] pixels = texture.GetPixels();
 
-            // Перетворюємо зображення в градації сірого та записуємо у матрицю
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
                     Color pixel = pixels[y * width + x];
-                    // Обчислюємо яскравість (середнє значення RGB)
                     float brightness = (pixel.r + pixel.g + pixel.b) / 3f;
                     matrix[y, x] = brightness;
                 }
@@ -244,7 +268,7 @@ namespace StudyProject.CodeBase.DecisionTree
             int width = matrix.GetLength(1);
             int height = matrix.GetLength(0);
             Texture2D texture = new Texture2D(width, height);
-            // Знайдемо мінімальне і максимальне значення у матриці для нормалізації
+
             float minVal = float.MaxValue;
             float maxVal = float.MinValue;
             for (int y = 0; y < height; y++)
@@ -256,38 +280,100 @@ namespace StudyProject.CodeBase.DecisionTree
                 }
             }
 
-            // Конвертуємо матрицю в текстуру з нормалізацією
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
-                    // Нормалізуємо значення до діапазону [0, 1]
                     float normalizedValue = (matrix[y, x] - minVal) / (maxVal - minVal);
-                    Color color = new Color(normalizedValue, normalizedValue, normalizedValue); // Градація сірого
+                    Color color = new Color(normalizedValue, normalizedValue, normalizedValue);
                     texture.SetPixel(x, y, color);
                 }
             }
 
-            // Застосовуємо зміни до текстури
             texture.Apply();
             return texture;
         }
 
-        public void Save(Texture2D texture)
+        private Color[,] GetColorMatrix(Texture2D image)
+        {
+            int width = image.width;
+            int height = image.height;
+            Color[,] matrix = new Color[height, width];
+
+            Color[] pixels = image.GetPixels();
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    matrix[y, x] = pixels[y * width + x];
+                }
+            }
+            return matrix;
+        }
+
+        private Color[,] ApplyColorConvolution(Color[,] colorMatrix, float[,] redFilter, float[,] greenFilter, float[,] blueFilter, int stride)
+        {
+            int width = (colorMatrix.GetLength(1) - redFilter.GetLength(0)) / stride + 1;
+            int height = (colorMatrix.GetLength(0) - redFilter.GetLength(1)) / stride + 1;
+            Color[,] output = new Color[height, width];
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    float redSum = 0, greenSum = 0, blueSum = 0;
+
+                    for (int fy = 0; fy < redFilter.GetLength(0); fy++)
+                    {
+                        for (int fx = 0; fx < redFilter.GetLength(1); fx++)
+                        {
+                            int imageX = x * stride + fx;
+                            int imageY = y * stride + fy;
+
+                            Color pixel = colorMatrix[imageY, imageX];
+                            redSum += pixel.r * redFilter[fy, fx];
+                            greenSum += pixel.g * greenFilter[fy, fx];
+                            blueSum += pixel.b * blueFilter[fy, fx];
+                        }
+                    }
+
+                    output[y, x] = new Color(Mathf.Clamp01(redSum), Mathf.Clamp01(greenSum), Mathf.Clamp01(blueSum));
+                }
+            }
+            return output;
+        }
+
+        private Texture2D CreateTextureFromColorMatrix(Color[,] matrix)
+        {
+            int width = matrix.GetLength(1);
+            int height = matrix.GetLength(0);
+            Texture2D texture = new Texture2D(width, height);
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    texture.SetPixel(x, y, matrix[y, x]);
+                }
+            }
+
+            texture.Apply();
+            return texture;
+        }
+
+        private void Save()
         {
             foreach (RawImage image in RawImages)
             {
                 var filepath = Path.Combine(Application.persistentDataPath, image.gameObject.name + ".png");
-                byte[] bytes = texture.EncodeToPNG();
+                byte[] bytes = (image.texture as Texture2D).EncodeToPNG();
 
-                // Визначаємо шлях для збереження файлу (наприклад, у папку проекту)
-
-                // Записуємо масив байтів у файл
                 File.WriteAllBytes(filepath, bytes);
 
                 Debug.Log("Filtered texture saved to: " + filepath);
             }
         }
+
     }
 
     public class FilterContainer
