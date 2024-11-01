@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -74,23 +73,23 @@ namespace StudyProject.CodeBase.DecisionTree
 
         private float[,] _redFilter =
         {
-            { 1, 0, -1 },
-            { 1, 0, -1 },
-            { 1, 0, -1 }
+            {1, 0, -1},
+            {1, 0, -1},
+            {1, 0, -1}
         };
 
         float[,] _greenFilter =
         {
-            { 0, 1, 0 },
-            { 1, -4, 1 },
-            { 0, 1, 0 }
+            {0, 1, 0},
+            {1, -4, 1},
+            {0, 1, 0}
         };
 
         float[,] _blueFilter =
         {
-            { -1, -1, -1 },
-            { 0, 0, 0 },
-            { 1, 1, 1 }
+            {-1, -1, -1},
+            {0, 0, 0},
+            {1, 1, 1}
         };
 
         private List<FilterContainer> _filters = new();
@@ -98,7 +97,8 @@ namespace StudyProject.CodeBase.DecisionTree
         [SerializeField] private RawImage _coloredRawImage;
         [SerializeField] private RawImage _graduallyFilteredRawImage;
 
-        private void Start()
+        [Button]
+        private void Test()
         {
             _filters = new List<FilterContainer>();
             _filters.Add(new FilterContainer(_filter1, 1, RawImages[0]));
@@ -130,14 +130,15 @@ namespace StudyProject.CodeBase.DecisionTree
             }
 
             CalculateConvolutionalGradually();
-            Color[,] colors = ApplyColorConvolution(GetColorMatrix(_coloredTexture), _redFilter, _blueFilter, _greenFilter, 1);
+            Color[,] colors = ApplyColorConvolution(GetColorMatrix(_coloredTexture), _redFilter, _blueFilter,
+                _greenFilter, 1);
             _coloredRawImage.texture = CreateTextureFromColorMatrix(colors);
             Save();
         }
 
         private void CalculateConvolutional(FilterContainer filter)
         {
-            float[,] image = GetImage(InputImage);
+            float[,] image = ConvertImage(InputImage);
             float[,] convResult = ApplyConvolution(image, filter.Filter, filter.Stride);
             float[,] pooledResult = ApplyMaxPooling(convResult, PoolingStride);
 
@@ -147,7 +148,7 @@ namespace StudyProject.CodeBase.DecisionTree
 
         private void CalculateConvolutionalGradually()
         {
-            float[,] image = GetImage(InputImage);
+            float[,] image = ConvertImage(InputImage);
             float[,] image2 = ApplyConvolution(image, _filter1, 1);
             float[,] image3 = ApplyConvolution(image2, _filter2, 1);
             float[,] convResult = ApplyConvolution(image3, _filter3, 1);
@@ -157,7 +158,7 @@ namespace StudyProject.CodeBase.DecisionTree
             _graduallyFilteredRawImage.texture = texture;
         }
 
-        private float[,] ApplyConvolution(float[,] matrix, float[,] filter, int stride)
+        public float[,] ApplyConvolution(float[,] matrix, float[,] filter, int stride)
         {
             int filterSize = filter.GetLength(0);
             int outputSize = (matrix.GetLength(0) - filterSize) / stride + 1;
@@ -185,7 +186,7 @@ namespace StudyProject.CodeBase.DecisionTree
             return output;
         }
 
-        private void ApplyReLU(float[,] matrix)
+        public void ApplyReLU(float[,] matrix)
         {
             for (int y = 0; y < matrix.GetLength(0); y++)
             {
@@ -196,7 +197,7 @@ namespace StudyProject.CodeBase.DecisionTree
             }
         }
 
-        private float[,] ApplyMaxPooling(float[,] matrix, int stride)
+        public float[,] ApplyMaxPooling(float[,] matrix, int stride)
         {
             int pooledHeight = matrix.GetLength(0) / stride;
             int pooledWidth = matrix.GetLength(1) / stride;
@@ -224,7 +225,7 @@ namespace StudyProject.CodeBase.DecisionTree
             return pooled;
         }
 
-        private float[] Flatten(float[,] matrix)
+        public float[] Flatten(float[,] matrix)
         {
             int height = matrix.GetLength(0);
             int width = matrix.GetLength(1);
@@ -242,7 +243,7 @@ namespace StudyProject.CodeBase.DecisionTree
             return flattened;
         }
 
-        private float[,] GetImage(Texture2D texture)
+        public float[,] ConvertImage(Texture2D texture)
         {
             int width = texture.width;
             int height = texture.height;
@@ -308,10 +309,12 @@ namespace StudyProject.CodeBase.DecisionTree
                     matrix[y, x] = pixels[y * width + x];
                 }
             }
+
             return matrix;
         }
 
-        private Color[,] ApplyColorConvolution(Color[,] colorMatrix, float[,] redFilter, float[,] greenFilter, float[,] blueFilter, int stride)
+        private Color[,] ApplyColorConvolution(Color[,] colorMatrix, float[,] redFilter, float[,] greenFilter,
+            float[,] blueFilter, int stride)
         {
             int width = (colorMatrix.GetLength(1) - redFilter.GetLength(0)) / stride + 1;
             int height = (colorMatrix.GetLength(0) - redFilter.GetLength(1)) / stride + 1;
@@ -340,6 +343,7 @@ namespace StudyProject.CodeBase.DecisionTree
                     output[y, x] = new Color(Mathf.Clamp01(redSum), Mathf.Clamp01(greenSum), Mathf.Clamp01(blueSum));
                 }
             }
+
             return output;
         }
 
@@ -373,7 +377,6 @@ namespace StudyProject.CodeBase.DecisionTree
                 Debug.Log("Filtered texture saved to: " + filepath);
             }
         }
-
     }
 
     public class FilterContainer
@@ -387,6 +390,82 @@ namespace StudyProject.CodeBase.DecisionTree
             Filter = filter;
             Stride = stride;
             RawImage = rawImage;
+        }
+    }
+
+    public class FullyConnectedLayer
+    {
+        private int _inputSize;
+        private int _outputSize;
+        private float[] _weights;
+        private float[] _biases;
+        private float[] _outputs;
+        private float[] _inputs;
+        private System.Random _random = new();
+
+        public FullyConnectedLayer(int inputSize, int outputSize)
+        {
+            _inputSize = inputSize;
+            _outputSize = outputSize;
+            _weights = new float[inputSize * outputSize];
+            _biases = new float[outputSize];
+            _outputs = new float[outputSize];
+
+            for (int i = 0; i < _weights.Length; i++)
+            {
+                _weights[i] = (float) (_random.NextDouble() * 2 - 1);
+            }
+
+            for (int i = 0; i < _biases.Length; i++)
+            {
+                _biases[i] = (float) (_random.NextDouble() * 2 - 1);
+            }
+        }
+
+        public float[] FeedForward(float[] input)
+        {
+            _inputs = input;
+            for (int i = 0; i < _outputSize; i++)
+            {
+                float sum = _biases[i];
+                for (int j = 0; j < _inputSize; j++)
+                {
+                    sum += input[j] * _weights[i * _inputSize + j];
+                }
+
+                _outputs[i] = Sigmoid(sum);
+            }
+
+            return _outputs;
+        }
+
+        public float[] Backpropagate(float[] errors, float learningRate)
+        {
+            float[] newErrors = new float[_inputSize];
+
+            for (int i = 0; i < _outputSize; i++)
+            {
+                float delta = errors[i] * SigmoidDerivative(_outputs[i]);
+                _biases[i] += delta * learningRate;
+
+                for (int j = 0; j < _inputSize; j++)
+                {
+                    newErrors[j] += _weights[i * _inputSize + j] * delta;
+                    _weights[i * _inputSize + j] += delta * _inputs[j] * learningRate;
+                }
+            }
+
+            return newErrors;
+        }
+
+        private float Sigmoid(float x)
+        {
+            return 1 / (1 + Mathf.Exp(-x));
+        }
+
+        private float SigmoidDerivative(float x)
+        {
+            return x * (1 - x);
         }
     }
 }
