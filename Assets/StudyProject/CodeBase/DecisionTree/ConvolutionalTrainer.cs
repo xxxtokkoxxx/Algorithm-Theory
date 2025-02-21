@@ -15,13 +15,32 @@ namespace StudyProject.CodeBase.DecisionTree
         [SerializeField] private List<Texture2D> _testInputs;
         [SerializeField] private float[] _targets;
         private FullyConnectedLayer _fullyConnectedLayer;
-        
+
         [Button]
         public void TrainTest()
         {
             Prepare(_inputs.Count, 2);
             Train(0.1f);
             Test();
+        }
+
+        public void Train(float learningRate)
+        {
+            for (var i = 0; i < _inputs.Count; i++)
+            {
+                float[,] inputImage = _network.ConvertImage(_inputs[i]);
+                float[] outputs = FeedForward(inputImage);
+
+                float[] target = _targets[i] == 0 ? new float[] { 1, 0 } : new float[] { 0, 1 };
+                float[] errors = new float[outputs.Length];
+
+                for (int j = 0; j < outputs.Length; j++)
+                {
+                    errors[j] = target[j] - outputs[j];
+                }
+
+                _fullyConnectedLayer.Backpropagate(errors, learningRate);
+            }
         }
 
         private void Test()
@@ -33,7 +52,7 @@ namespace StudyProject.CodeBase.DecisionTree
             {
                 var testTargets = _testInputs[i];
                 float[] output = FeedForward(_network.ConvertImage(testTargets));
-                float[] target = _targets[i] == 0 ? new float[] { 1, 0 } : new float[] { 0, 1 };
+                float[] target = _targets[i + _inputs.Count] == 0 ? new float[] { 1, 0 } : new float[] { 0, 1 };
 
                 int predictedClass = Array.IndexOf(output, output.Max());
                 int actualClass = Array.IndexOf(target, target.Max());
@@ -52,25 +71,6 @@ namespace StudyProject.CodeBase.DecisionTree
         private void Prepare(int fcInputSize, int fcOutputSize)
         {
             _fullyConnectedLayer = new FullyConnectedLayer(fcInputSize, fcOutputSize);
-        }
-
-        public void Train(float learningRate)
-        {
-            for (var i = 0; i < _inputs.Count; i++)
-            {
-                float[,] inputImage = _network.ConvertImage(_inputs[i]);
-                float[] outputs = FeedForward(inputImage);
-
-                float[] target = _targets[i] == 0 ? new float[] { 1, 0 } : new float[] { 0, 1 };
-                float[] errors = new float[outputs.Length];
-
-                for (int j = 0; j < outputs.Length; i++)
-                {
-                    errors[j] = target[j] - outputs[j];
-                }
-
-                float[] fcErrors = _fullyConnectedLayer.Backpropagate(errors, learningRate);
-            }
         }
 
         private float[] FeedForward(float[,] inputImage)
